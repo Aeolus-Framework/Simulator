@@ -14,7 +14,7 @@ npm run build
 ## Build and run
 Then you will be able to build the project and then running it with:
 ```sh
-npm build && npm start
+npm run build && npm start
 ```
 
 ## Run unit tests

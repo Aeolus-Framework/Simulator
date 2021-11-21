@@ -23,6 +23,12 @@ To run all unit tests defined in `/test/`, use:
 npm test
 ```
 
+## Develop
+To rebuild and start the applicaiton when a file in the project is saved, use:
+```sh
+npm run dev
+```
+
 # Build and run with `docker`
 Build docker image.
 ```sh

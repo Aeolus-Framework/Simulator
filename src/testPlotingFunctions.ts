@@ -1,5 +1,6 @@
 import { plot, Plot } from "nodeplotlib";
 import { electricityConsumption, electricityConsumption_spikeModel } from "./electricity/consumption";
+import { mean } from "./math/numberArrays";
 import { TruncatedNormalDistribution } from "./math/stastistics/truncatedNormalDistribution";
 import Household from "./models/household";
 
@@ -48,29 +49,45 @@ export function plotEnergyConsumption_oneHousehold() {
         consumption.push(household.GetCurrentElectricityConsumption(date));
     }
 
+    console.log(`Consumption array length is ${consumption.length}`);
     const data: Plot[] = [{ x: time, y: consumption, type: "scatter" }];
     plot(data);
 
     const yearlyConsumption = calculateYearlyConsumption(consumption);
-    console.log(`Energy used per year is ${Math.round(yearlyConsumption)} kWh (normal dist. model)`);
+    console.log(`Energy used per year is ${Math.round(yearlyConsumption)} kWh (household)`);
 }
 
 export function plotEnergyProduction_oneHousehold() {
-    const consumption = new Array<number>();
-    const time = new Array<Date>();
     const household = new Household();
 
+    // Run simulation
+    const timeRaw = new Array<Date>();
+    const productionRaw = new Array<number>();
+    const start = performance.now();
     for (let i = 0; i < 60 * 60 * 24; i++) {
-        var date = new Date(new Date(2000, 0, 1, 0, 0, 0).getTime() + i * 1000);
-        time.push(date);
-        consumption.push(household.GetCurrentElectricityProduction(date));
+        const date = new Date(new Date(2000, 0, 1, 0, 0, 0).getTime() + i * 1000);
+        timeRaw.push(date);
+        productionRaw.push(household.GetCurrentElectricityProduction(date));
+    }
+    const end = performance.now();
+    console.log(`Simulation time with 1Hz sampling frequency is ${end - start} milliseconds`);
+
+    // Reduce raw data into 10 minutes intervals
+    const timeReduced = new Array<Date>();
+    const productionReduced = new Array<number>();
+    for (let i = 0; i < 144; i++) {
+        const timeBatch = timeRaw.splice(0, 600);
+        const prodBatch = productionRaw.splice(0, 600);
+        timeReduced.push(timeBatch[0]);
+        productionReduced.push(prodBatch.reduce(mean, 0));
+        //productionReduced.push(prodBatch.reduce(sum) / 600);
     }
 
-    const data: Plot[] = [{ x: time, y: consumption, type: "scatter" }];
+    const data: Plot[] = [{ x: timeReduced, y: productionReduced, type: "scatter" }];
     plot(data);
 
-    const yearlyConsumption = calculateYearlyConsumption(consumption);
-    console.log(`Energy used per year is ${Math.round(yearlyConsumption)} kWh (normal dist. model)`);
+    const yearlyConsumption = calculateYearlyConsumption(productionReduced);
+    console.log(`Energy produced during one year is ${Math.round(yearlyConsumption)} kWh (household)`);
 }
 
 /**
@@ -80,7 +97,7 @@ export function plotEnergyProduction_oneHousehold() {
 export function calculateYearlyConsumption(consumedPower: number[]): number {
     let yearlyConsumption = 0;
     for (let day = 0; day < 365; day++) {
-        const avgPowerThisDay = consumedPower.reduce((pValue, cValue) => pValue + cValue) / 86400;
+        const avgPowerThisDay = consumedPower.reduce(mean, 0);
         yearlyConsumption += avgPowerThisDay * 24;
     }
     return yearlyConsumption / 1000; // Convert from W to kW.

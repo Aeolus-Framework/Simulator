@@ -15,12 +15,16 @@ export default class Household {
 
     // Production properties
     public readonly maximumProduction: number;
+    public readonly productionCutoutWindspeed: number;
 
     private consumptionNoiseDist: distribution;
     private consumptionHighSpikeGenerator: EffectSpikeGenerator;
     private consumptionHighSpike: EffectSpike;
 
     constructor() {
+        this.maximumProduction = 400;
+        this.productionCutoutWindspeed = 20;
+
         this.baseConsumption = 500;
         this.consumptionHighSpikeGenerator = new EffectSpikeGenerator(1100, 3500, 15, 60);
         this.consumptionNoiseDist = new TruncatedNormalDistribution(-100, 200);
@@ -51,7 +55,14 @@ export default class Household {
     /**
      * Get the electricity production in watts for the last second.
      */
-    public GetCurrentElectricityProduction(): number {
-        throw new Error("Not implemented");
+    public GetCurrentElectricityProduction(dateNow: Date): number {
+        // TODO: implement as time dependent function, f(windspeed)
+        const windspeed = Math.random() * 7;
+
+        if (windspeed <= 0 || windspeed >= this.productionCutoutWindspeed) {
+            return 0;
+        }
+
+        return this.maximumProduction / (1 + Math.exp(-(windspeed - 9.8)));
     }
 }

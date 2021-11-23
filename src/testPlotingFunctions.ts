@@ -55,6 +55,24 @@ export function plotEnergyConsumption_oneHousehold() {
     console.log(`Energy used per year is ${Math.round(yearlyConsumption)} kWh (normal dist. model)`);
 }
 
+export function plotEnergyProduction_oneHousehold() {
+    const consumption = new Array<number>();
+    const time = new Array<Date>();
+    const household = new Household();
+
+    for (let i = 0; i < 60 * 60 * 24; i++) {
+        var date = new Date(new Date(2000, 0, 1, 0, 0, 0).getTime() + i * 1000);
+        time.push(date);
+        consumption.push(household.GetCurrentElectricityProduction(date));
+    }
+
+    const data: Plot[] = [{ x: time, y: consumption, type: "scatter" }];
+    plot(data);
+
+    const yearlyConsumption = calculateYearlyConsumption(consumption);
+    console.log(`Energy used per year is ${Math.round(yearlyConsumption)} kWh (normal dist. model)`);
+}
+
 /**
  * Calculate the consumed power during one year in kilowatt-hours (kWh).
  * @param consumedPower Consumed power in watts

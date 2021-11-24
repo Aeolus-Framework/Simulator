@@ -1,8 +1,10 @@
 import { plot, Plot } from "nodeplotlib";
 import { electricityConsumption, electricityConsumption_spikeModel } from "./electricity/consumption";
 import { mean } from "./math/numberArrays";
+import { probabilityDensityFunction } from "./math/stastistics/guassian";
 import { TruncatedNormalDistribution } from "./math/stastistics/truncatedNormalDistribution";
 import Household from "./models/household";
+import { WindspeedModel } from "./models/wind";
 
 export function plotEnergyConsumption_spikeModel() {
     const consumption = new Array<number>();
@@ -85,6 +87,37 @@ export function plotEnergyProduction_oneHousehold() {
 
     const yearlyConsumption = calculateYearlyConsumption(productionReduced);
     console.log(`Energy produced during one year is ${Math.round(yearlyConsumption)} kWh (household)`);
+}
+
+export function plotGuassian() {
+    const y = new Array<number>();
+    const x = new Array<number>();
+
+    for (let i = 0; i < 84600; i++) {
+        x.push(i);
+        y.push(probabilityDensityFunction(10000, 45000, 10600, i));
+    }
+
+    const data: Plot[] = [{ x, y, type: "scatter" }];
+    plot(data);
+}
+
+export function plotWindspeed() {
+    const windspeed = new Array<number>();
+    const time = new Array<Date>();
+    const windModel = new WindspeedModel();
+
+    for (let i = 0; i < 60 * 60 * 24 * 5; i++) {
+        var date = new Date(new Date(2000, 0, 1, 0, 0, 0).getTime() + i * 1000);
+        time.push(date);
+        windspeed.push(windModel.getWindspeed(date));
+    }
+
+    console.log(`Windspeed array length is ${windspeed.length}`);
+    const data: Plot[] = [{ x: time, y: windspeed, type: "scatter" }];
+    plot(data);
+
+    console.log(`Average windspeed today is ${Math.round(windspeed.reduce(mean))} m/s`);
 }
 
 /**

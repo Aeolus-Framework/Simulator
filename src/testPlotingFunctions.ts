@@ -95,29 +95,48 @@ export function plotGuassian() {
 
     for (let i = 0; i < 84600; i++) {
         x.push(i);
-        y.push(probabilityDensityFunction(10000, 45000, 10600, i));
+        y.push(probabilityDensityFunction(4200, 46000, 10600, i) + 0.45);
     }
 
     const data: Plot[] = [{ x, y, type: "scatter" }];
     plot(data);
+
+    console.log(`Mean probability is ${y.reduce(mean, 0)}`);
 }
 
-export function plotWindspeed() {
+export function plotWindspeedDuringYear() {
     const windspeed = new Array<number>();
     const time = new Array<Date>();
     const windModel = new WindspeedModel();
 
-    for (let i = 0; i < 60 * 60 * 24 * 5; i++) {
+    console.log("Sampling data");
+
+    for (let i = 0; i < 60 * 60 * 24 * 365; i++) {
         var date = new Date(new Date(2000, 0, 1, 0, 0, 0).getTime() + i * 1000);
         time.push(date);
-        windspeed.push(windModel.getWindspeed(date));
+        windspeed.push(windModel.getWindspeed());
     }
 
-    console.log(`Windspeed array length is ${windspeed.length}`);
-    const data: Plot[] = [{ x: time, y: windspeed, type: "scatter" }];
+    console.log("Reducing datasize");
+
+    // Reduce datasize
+    const sizeOfSample = 86400;
+    const numberOfSamples = windspeed.length / sizeOfSample;
+    const timeSample = new Array<Date>();
+    const windspeedSample = new Array<number>();
+    for (let i = 0; i < numberOfSamples; i++) {
+        timeSample.push(time[i * sizeOfSample]);
+        windspeedSample.push(
+            windspeed.slice(i * sizeOfSample, i * sizeOfSample + sizeOfSample).reduce(mean, 0)
+        );
+    }
+
+    const data: Plot[] = [
+        { x: timeSample, y: windspeedSample, type: "scatter", title: { text: "Windspeed during a year" } }
+    ];
     plot(data);
 
-    console.log(`Average windspeed today is ${Math.round(windspeed.reduce(mean))} m/s`);
+    console.log(`Average windspeed today is ${Math.round(windspeed.reduce(mean, 0))} m/s`);
 }
 
 /**

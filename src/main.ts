@@ -3,7 +3,7 @@ import {
     plotEnergyConsumption_spikeModel,
     plotEnergyConsumption_oneHousehold,
     plotEnergyProduction_oneHousehold,
-    plotWindspeed,
+    plotWindspeedDuringYear,
     plotGuassian,
     plotTruncatedNormalDist
 } from "./testPlotingFunctions";
@@ -12,6 +12,6 @@ import {
 //plotEnergyConsumption_spikeModel();
 //plotEnergyConsumption_oneHousehold();
 //plotEnergyProduction_oneHousehold();
-plotWindspeed();
+plotWindspeedDuringYear();
 //plotGuassian();
 //plotTruncatedNormalDist();

@@ -14,13 +14,19 @@ npm run build
 ## Build and run
 Then you will be able to build the project and then running it with:
 ```sh
-npm build && npm start
+npm run build && npm start
 ```
 
 ## Run unit tests
 To run all unit tests defined in `/test/`, use:
 ```sh
 npm test
+```
+
+## Develop
+To rebuild and start the applicaiton when a file in the project is saved, use:
+```sh
+npm run dev
 ```
 
 # Build and run with `docker`

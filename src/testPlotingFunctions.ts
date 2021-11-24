@@ -63,14 +63,11 @@ export function plotEnergyProduction_oneHousehold() {
     // Run simulation
     const timeRaw = new Array<Date>();
     const productionRaw = new Array<number>();
-    const start = performance.now();
     for (let i = 0; i < 60 * 60 * 24; i++) {
         const date = new Date(new Date(2000, 0, 1, 0, 0, 0).getTime() + i * 1000);
         timeRaw.push(date);
         productionRaw.push(household.GetCurrentElectricityProduction(date));
     }
-    const end = performance.now();
-    console.log(`Simulation time with 1Hz sampling frequency is ${end - start} milliseconds`);
 
     // Reduce raw data into 10 minutes intervals
     const timeReduced = new Array<Date>();

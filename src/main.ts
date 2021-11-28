@@ -7,11 +7,14 @@ import {
     plotGuassian,
     plotTruncatedNormalDist
 } from "./testPlotingFunctions";
+import { startSimulator } from "./simulator";
 
 //plotEnergyConsumption_normalDistModel();
 //plotEnergyConsumption_spikeModel();
 //plotEnergyConsumption_oneHousehold();
 //plotEnergyProduction_oneHousehold();
-plotWindspeedDuringYear();
+//plotWindspeedDuringYear();
 //plotGuassian();
 //plotTruncatedNormalDist();
+
+startSimulator();

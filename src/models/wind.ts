@@ -21,10 +21,21 @@ export class WindspeedModel {
     private changeDist = new TruncatedNormalDistribution(0, 0.002);
 
     /**
+     * Get next windspeed at a specified height above the ground.
+     * @param height The height to measure the windspeed. If `height < 10` the windspeed is measured at 10 meters above ground.
+     * @returns Next windspeed at a specified height above the ground.
      *
-     * @returns
+     * @see https://en.wikipedia.org/wiki/Wind_gradient#Wind_turbines
      */
-    getWindspeed(): number {
+    getWindSpeedAtHeight(height: number): number {
+        const groundWindspeed = this.getWindspeedGround();
+        if (height < 10) return groundWindspeed;
+
+        const hellmanExponent = 0.34;
+        return groundWindspeed * Math.pow(height / 10, hellmanExponent);
+    }
+
+    private getWindspeedGround(): number {
         const windspeedChange = this.generateWindspeedChange();
         this.lastWindValue += windspeedChange;
         return Math.abs(this.lastWindValue);

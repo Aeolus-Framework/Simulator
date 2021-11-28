@@ -1,4 +1,4 @@
-import { plot, Plot } from "nodeplotlib";
+import { Layout, plot, Plot } from "nodeplotlib";
 import { electricityConsumption, electricityConsumption_spikeModel } from "./electricity/consumption";
 import { mean } from "./math/numberArrays";
 import { probabilityDensityFunction } from "./math/stastistics/guassian";
@@ -61,29 +61,41 @@ export function plotEnergyConsumption_oneHousehold() {
 
 export function plotEnergyProduction_oneHousehold() {
     const household = new Household();
+    const windModel = new WindspeedModel();
+    const daysToPlot = 365;
 
     // Run simulation
     const timeRaw = new Array<Date>();
     const productionRaw = new Array<number>();
-    for (let i = 0; i < 60 * 60 * 24; i++) {
+    const windspeedRaw = new Array<number>();
+    for (let i = 0; i < 86400 * daysToPlot; i++) {
         const date = new Date(new Date(2000, 0, 1, 0, 0, 0).getTime() + i * 1000);
+        const windspeed = windModel.getWindSpeedAtHeight(15);
+        const production = household.GetCurrentElectricityProduction(windspeed);
+
         timeRaw.push(date);
-        productionRaw.push(household.GetCurrentElectricityProduction(date));
+        windspeedRaw.push(windspeed);
+        productionRaw.push(production);
     }
+    const targetArrPlotSize = daysToPlot;
+    const timeReduced = reduceDateArraySize(timeRaw, targetArrPlotSize);
+    const productionReduced = reduceArraySize(productionRaw, targetArrPlotSize);
+    const windspeedReduced = reduceArraySize(windspeedRaw, targetArrPlotSize);
 
-    // Reduce raw data into 10 minutes intervals
-    const timeReduced = new Array<Date>();
-    const productionReduced = new Array<number>();
-    for (let i = 0; i < 144; i++) {
-        const timeBatch = timeRaw.splice(0, 600);
-        const prodBatch = productionRaw.splice(0, 600);
-        timeReduced.push(timeBatch[0]);
-        productionReduced.push(prodBatch.reduce(mean, 0));
-        //productionReduced.push(prodBatch.reduce(sum) / 600);
-    }
-
-    const data: Plot[] = [{ x: timeReduced, y: productionReduced, type: "scatter" }];
-    plot(data);
+    const data: Plot[] = [
+        { x: timeReduced, y: productionReduced, type: "scatter", name: "Production" },
+        { x: timeReduced, y: windspeedReduced, type: "scatter", name: "Windspeed", yaxis: "y2" }
+    ];
+    const layout: Layout = {
+        title: "Production and windspeed during a year",
+        yaxis: { title: "Production [W]" },
+        yaxis2: {
+            title: "Windspeed [m/s]",
+            overlaying: "y",
+            side: "right"
+        }
+    };
+    plot(data, layout);
 
     const yearlyConsumption = calculateYearlyConsumption(productionReduced);
     console.log(`Energy produced during one year is ${Math.round(yearlyConsumption)} kWh (household)`);
@@ -114,29 +126,52 @@ export function plotWindspeedDuringYear() {
     for (let i = 0; i < 60 * 60 * 24 * 365; i++) {
         var date = new Date(new Date(2000, 0, 1, 0, 0, 0).getTime() + i * 1000);
         time.push(date);
-        windspeed.push(windModel.getWindspeed());
+        windspeed.push(windModel.getWindSpeedAtHeight(49));
     }
 
     console.log("Reducing datasize");
 
     // Reduce datasize
-    const sizeOfSample = 86400;
-    const numberOfSamples = windspeed.length / sizeOfSample;
-    const timeSample = new Array<Date>();
-    const windspeedSample = new Array<number>();
-    for (let i = 0; i < numberOfSamples; i++) {
-        timeSample.push(time[i * sizeOfSample]);
-        windspeedSample.push(
-            windspeed.slice(i * sizeOfSample, i * sizeOfSample + sizeOfSample).reduce(mean, 0)
-        );
-    }
+    const targetArrPlotSize = Math.ceil(time.length / 86400);
+    const timeSample = reduceDateArraySize(time, targetArrPlotSize);
+    const windspeedSample = reduceArraySize(windspeed, targetArrPlotSize);
 
-    const data: Plot[] = [
-        { x: timeSample, y: windspeedSample, type: "scatter", title: { text: "Windspeed during a year" } }
-    ];
-    plot(data);
+    const data: Plot[] = [{ x: timeSample, y: windspeedSample, type: "scatter" }];
+    plot(data, { title: "Windspeed during a year" });
 
     console.log(`Average windspeed today is ${Math.round(windspeed.reduce(mean, 0))} m/s`);
+}
+
+/**
+ * Create a reduced copy (shallow) of an date array.
+ * @param arr Date array to reduce size of
+ * @param targetSize Size of new date array
+ * @returns A reduced copy (shallow) of an date array.
+ */
+function reduceDateArraySize(arr: Date[], targetSize: number): Date[] {
+    const reducedBlockSize = arr.length / targetSize;
+    const arrReduced = new Array<Date>();
+    for (let i = 0; i < targetSize; i++) {
+        arrReduced.push(arr.slice(i * reducedBlockSize, i * reducedBlockSize + reducedBlockSize)[0]);
+    }
+    return arrReduced;
+}
+
+/**
+ * Create a reduced copy (shallow) of an array.
+ * @param arr Array to reduce size of
+ * @param targetSize Size of new array
+ * @returns A reduced copy (shallow) of an array.
+ */
+function reduceArraySize(arr: number[], targetSize: number): number[] {
+    const reducedBlockSize = arr.length / targetSize;
+    const arrReduced = new Array<number>();
+    for (let i = 0; i < targetSize; i++) {
+        arrReduced.push(
+            arr.slice(i * reducedBlockSize, i * reducedBlockSize + reducedBlockSize).reduce(mean, 0)
+        );
+    }
+    return arrReduced;
 }
 
 /**

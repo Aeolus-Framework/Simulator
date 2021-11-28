@@ -1,9 +1,9 @@
 import { distribution } from "../math/stastistics/distribution";
 import { TruncatedNormalDistribution } from "../math/stastistics/truncatedNormalDistribution";
-import { uniformDistribution } from "../math/stastistics/uniform";
 import { EffectSpike, EffectSpikeGenerator } from "./EffectSpike";
 
 export default class Household {
+    public id: string;
     public readonly owner: string;
 
     // House properties
@@ -15,7 +15,7 @@ export default class Household {
     public readonly heatingEfficiency: number;
 
     // Production properties
-    public readonly numberOfWindturbines: number;
+    public readonly numberOfActiveWindturbines: number;
     public readonly maximumWindturbineProduction: number;
     public readonly productionCutoutWindspeed: number;
 
@@ -24,8 +24,8 @@ export default class Household {
     private consumptionHighSpike: EffectSpike;
 
     constructor() {
-        this.numberOfWindturbines = 2;
-        this.maximumWindturbineProduction = 400;
+        this.numberOfActiveWindturbines = 2;
+        this.maximumWindturbineProduction = 3500;
         this.productionCutoutWindspeed = 20;
 
         this.baseConsumption = 500;
@@ -58,15 +58,12 @@ export default class Household {
     /**
      * Get the electricity production in watts for the last second.
      */
-    public GetCurrentElectricityProduction(dateNow: Date): number {
-        // TODO: implement as time dependent function, f(windspeed)
-        const windspeed = new uniformDistribution(6, 13).next();
-
+    public GetCurrentElectricityProduction(windspeed: number): number {
         if (windspeed <= 0 || windspeed >= this.productionCutoutWindspeed) {
             return 0;
         }
 
         const productionPerTurbine = this.maximumWindturbineProduction / (1 + Math.exp(-(windspeed - 9.8)));
-        return this.numberOfWindturbines * productionPerTurbine;
+        return this.numberOfActiveWindturbines * productionPerTurbine;
     }
 }

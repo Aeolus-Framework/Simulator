@@ -11,6 +11,8 @@
         "test": "jest"
     },
     "dependencies": {
+        "mongodb": "^4.2.0",
+        "mongoose": "^6.0.13",
         "nodeplotlib": "^0.7.6"
     },
     "devDependencies": {

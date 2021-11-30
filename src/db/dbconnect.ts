@@ -1,8 +1,10 @@
 var mongoose = require('mongoose')
 
-var mongoDB = 'mongodb://127.0.0.1/test'
-mongoose.connect(mongoDB, {useNewURLParser : true, useUnifiedTopology: true})
+const dbName = 'mongodb://127.0.0.1/test'
 
-var db = mongoose.connection
-
-db.on('error', console.error.bind(console, 'MongoDB connection Error'))
+mongoose.connect(dbName, {
+    useNewUrlParser: true,
+    useCreateIndex: true,
+    useUnifiedTopology: true,
+    useFindAndModify: false
+})

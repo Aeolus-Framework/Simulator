@@ -1,12 +1,20 @@
 import { Double } from "bson";
+const mongoose = require('mongoose')
 
-var mongoose = require('mongoose')
 
-var Schema = mongoose.Schema
+var consumptionSchema = new mongoose.Schema({
+    timestamp: {
+        type: Date,
 
-var consumption = new Schema({
-    timestamp: Date,
-    consumption: Double
+    },
+    household: {
+        type: String,
+    },
+    consumption: {
+        type: Double
+    }
 });
 
-var consumptionModel = mongoose.model('ConsumptionModel', consumption)
+const consumption = mongoose.model('Consumption', consumptionSchema)
+
+module.exports = consumption

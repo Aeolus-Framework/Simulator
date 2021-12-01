@@ -1,10 +1,8 @@
-var mongoose = require('mongoose')
+import mongoose from "mongoose";
 
-const dbName = 'mongodb://127.0.0.1/test'
+const dbUri = "mongodb://127.0.0.1/test";
 
-mongoose.connect(dbName, {
-    useNewUrlParser: true,
-    useCreateIndex: true,
-    useUnifiedTopology: true,
-    useFindAndModify: false
-})
+mongoose.connect(dbUri, {}, err => {
+    if (err) throw err;
+    console.log("Connected to database");
+});

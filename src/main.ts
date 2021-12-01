@@ -8,6 +8,7 @@ import {
     plotTruncatedNormalDist
 } from "./testPlotingFunctions";
 import { startSimulator } from "./simulator";
+import { startSimulator as startBatSimulator } from "./batchedSimulator";
 
 //plotEnergyConsumption_normalDistModel();
 //plotEnergyConsumption_spikeModel();
@@ -17,4 +18,5 @@ import { startSimulator } from "./simulator";
 //plotGuassian();
 //plotTruncatedNormalDist();
 
-startSimulator();
+//startSimulator();
+startBatSimulator({ day: 1 });

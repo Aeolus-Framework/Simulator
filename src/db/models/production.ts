@@ -1,20 +1,19 @@
 import { Double } from "bson";
-const mongoose = require('mongoose')
+import mongoose from "mongoose";
 
-
-var productionSchema = new mongoose.Schema({
-    timestamp: {
-        type: Date,
-
+var productionSchema = new mongoose.Schema(
+    {
+        timestamp: {
+            type: Date
+        },
+        household: {
+            type: String
+        },
+        production: {
+            type: Number
+        }
     },
-    household: {
-        type: String,
-    },
-    production: {
-        type: Double
-    }
-});
+    { versionKey: false }
+);
 
-const production = mongoose.model('Consumption', productionSchema)
-
-module.exports = production
+export const production = mongoose.model("production", productionSchema);

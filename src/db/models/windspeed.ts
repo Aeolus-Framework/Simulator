@@ -1,17 +1,16 @@
 import { Double } from "bson";
-const mongoose = require('mongoose')
+import mongoose from "mongoose";
 
-
-var windspeedSchema = new mongoose.Schema({
-    timestamp: {
-        type: Date,
-
+var windspeedSchema = new mongoose.Schema(
+    {
+        timestamp: {
+            type: Date
+        },
+        windspeed: {
+            type: Number
+        }
     },
-    windspeed: {
-        type: Double
-    }
-});
+    { versionKey: false }
+);
 
-const windspeed = mongoose.model('Consumption', windspeedSchema)
-
-module.exports = windspeed
+export const windspeed = mongoose.model("windspeed", windspeedSchema);

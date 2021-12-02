@@ -1,9 +1,13 @@
 import Household from "./models/household";
 import { WindspeedModel } from "./models/wind";
+import { windspeed as WindspeedDocument } from "./db/models/windspeed";
+import { production as ProductionDocument } from "./db/models/production";
+import { consumption as ConsumptionDocument } from "./db/models/consumption";
+
+import "./db/dbconnect";
 
 let windmodel: WindspeedModel;
 let households: Household[];
-let simulatorInterval: NodeJS.Timer;
 
 export function startSimulator(): void {
     initSimulator();
@@ -19,36 +23,36 @@ function initSimulator(): void {
         household.id = i.toString();
 
         households.push(household);
-        production[household.id] = new Array<Number>();
-        consumption[household.id] = new Array<Number>();
     }
 }
 
-let counter = 0;
-
-// Data buffer before inserting into DB
-let time = new Array<Date>();
-let windspeed = new Array<Number>();
-let production = new Array<Number[]>();
-let consumption = new Array<Number[]>();
 function runNextSimCycle() {
     const timeNow = new Date();
     const windNow = windmodel.getWindSpeedAtHeight(15);
 
-    time.push(timeNow);
-    windspeed.push(windNow);
+    new WindspeedDocument({
+        timestamp: timeNow,
+        windspeed: windNow
+    }).save();
+
     households.forEach(household => {
-        production[household.id].push(household.GetCurrentElectricityProduction(windNow));
-        consumption[household.id].push(household.GetCurrentElectricityConsumption(timeNow));
+        const productionNow = household.GetCurrentElectricityProduction(windNow);
+        const consumptionNow = household.GetCurrentElectricityConsumption(timeNow);
+
+        new ProductionDocument({
+            timestamp: timeNow,
+            household: household.id,
+            production: productionNow
+        }).save();
+        new ConsumptionDocument({
+            timestamp: timeNow,
+            household: household.id,
+            consumption: consumptionNow
+        }).save();
     });
 
-    // Insert into DB and remove from buffer on success.
-
-    // Remove this block to never stop simulation
-    counter++;
-    if (counter < 60) {
-        setTimeout(runNextSimCycle, millisecondsToNextSecond());
-    }
+    console.log(timeNow.toISOString());
+    setTimeout(runNextSimCycle, millisecondsToNextSecond());
 }
 
 function millisecondsToNextSecond(): number {

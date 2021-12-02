@@ -7,7 +7,7 @@ let simulatorInterval: NodeJS.Timer;
 
 export function startSimulator(): void {
     initSimulator();
-    simulatorInterval = setInterval(runNextSimCycle, 1000);
+    runNextSimCycle();
 }
 
 function initSimulator(): void {
@@ -46,7 +46,12 @@ function runNextSimCycle() {
 
     // Remove this block to never stop simulation
     counter++;
-    if (counter > 60) {
-        clearInterval(simulatorInterval);
+    if (counter < 60) {
+        setTimeout(runNextSimCycle, millisecondsToNextSecond());
     }
+}
+
+function millisecondsToNextSecond(): number {
+    const timeNow = new Date();
+    return 1000 - timeNow.getMilliseconds();
 }

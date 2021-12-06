@@ -1,5 +1,4 @@
-import { distribution } from "../math/stastistics/distribution";
-import { TruncatedNormalDistribution } from "../math/stastistics/truncatedNormalDistribution";
+import gaussian from "gaussian";
 
 export class EffectSpike {
     public endDate: Date;
@@ -19,33 +18,42 @@ export class EffectSpike {
 }
 
 export class EffectSpikeGenerator {
-    private spikeAmplitudeDist: distribution;
-    private spikeDurationMinutesDist: distribution;
+    amplitudeMean: number;
+    amplitudeVariance: number;
+    durationMean: number;
+    durationVariance: number;
 
     /**
      * Initialize a new instance if the EffectSpikeGenerator class.
-     * @param amplitudeLowerLimit Lower limit of spike amplitude. Unit watt
-     * @param amplitudeUpperLimit Upper limit of spike amplitude. Unit watt
-     * @param lowerDurationLimit Lower limit of spike duration. Unit minute
-     * @param upperDurationLimit Upper limit of spike duration. Unit minute
+     * @param amplitudeMean Mean value of spike amplitude. Unit watt
+     * @param amplitudeVariance Variance of spike amplitude. Unit watt
+     * @param durationMean Mean value of spike duration. Unit minute
+     * @param durationVariance Variance of spike duration. Unit minute
      */
     constructor(
-        amplitudeLowerLimit: number,
-        amplitudeUpperLimit: number,
-        lowerDurationLimit: number,
-        upperDurationLimit: number
+        amplitudeMean: number,
+        amplitudeVariance: number,
+        durationMean: number,
+        durationVariance: number
     ) {
-        this.spikeAmplitudeDist = new TruncatedNormalDistribution(amplitudeLowerLimit, amplitudeUpperLimit);
-        this.spikeDurationMinutesDist = new TruncatedNormalDistribution(
-            lowerDurationLimit,
-            upperDurationLimit
-        );
+        this.amplitudeMean = amplitudeMean;
+        this.amplitudeVariance = amplitudeVariance;
+        this.durationMean = durationMean;
+        this.durationVariance = durationVariance;
+    }
+
+    private getNextAmplitude(): number {
+        return gaussian(this.amplitudeMean, this.amplitudeVariance).ppf(Math.random());
+    }
+
+    private getNextDuration(): number {
+        return gaussian(this.durationMean, this.durationVariance).ppf(Math.random());
     }
 
     getNext(date: Date): EffectSpike {
-        const spikeDurationInMilliseconds = this.spikeDurationMinutesDist.next() * 60 * 1000;
+        const spikeDurationInMilliseconds = this.getNextDuration() * 60 * 1000;
         const spikeEnds = new Date(date.getTime() + spikeDurationInMilliseconds);
-        const spikeAmplitude = this.spikeAmplitudeDist.next();
+        const spikeAmplitude = this.getNextAmplitude();
         return new EffectSpike(spikeEnds, spikeAmplitude);
     }
 }

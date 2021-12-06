@@ -11,6 +11,7 @@
         "test": "jest"
     },
     "dependencies": {
+        "gaussian": "^1.2.0",
         "mongodb": "^4.2.0",
         "mongoose": "^6.0.13",
         "nodeplotlib": "^0.7.6"
@@ -18,6 +19,7 @@
     "devDependencies": {
         "@babel/preset-env": "^7.16.0",
         "@babel/preset-typescript": "^7.16.0",
+        "@types/gaussian": "^1.1.4",
         "@types/jest": "^27.0.2",
         "babel-jest": "^27.3.1",
         "jest": "^27.3.1",

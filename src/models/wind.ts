@@ -1,3 +1,4 @@
+import { distribution } from "../math/stastistics/distribution";
 import { TruncatedNormalDistribution } from "../math/stastistics/truncatedNormalDistribution";
 
 /**
@@ -15,10 +16,20 @@ import { TruncatedNormalDistribution } from "../math/stastistics/truncatedNormal
  * @see TruncatedNormalDistribution truncated normal distributed value generator
  */
 export class WindspeedModel {
-    private lastWindValue = 4.5;
+    private lastWindValue: number;
+    private changeDist: distribution;
+    private hellmanExponent: number;
 
-    // Windspeed change parameters
-    private changeDist = new TruncatedNormalDistribution(0, 0.002);
+    /**
+     *
+     * @param initialValue Initial windspeed
+     * @param changeDistribution Distribution to take change values from
+     */
+    constructor(initialValue: number, maxWindspeedChange: number, hellmanEponent: number) {
+        this.changeDist = new TruncatedNormalDistribution(0, maxWindspeedChange);
+        this.lastWindValue = initialValue;
+        this.hellmanExponent = hellmanEponent;
+    }
 
     /**
      * Get next windspeed at a specified height above the ground.
@@ -31,8 +42,7 @@ export class WindspeedModel {
         const groundWindspeed = this.getWindspeedGround();
         if (height < 10) return groundWindspeed;
 
-        const hellmanExponent = 0.34;
-        return groundWindspeed * Math.pow(height / 10, hellmanExponent);
+        return groundWindspeed * Math.pow(height / 10, this.hellmanExponent);
     }
 
     private getWindspeedGround(): number {

@@ -1,15 +1,15 @@
-import { distribution } from "../math/stastistics/distribution";
-import { TruncatedNormalDistribution } from "../math/stastistics/truncatedNormalDistribution";
+import { Battery } from "./Battery";
 import { EffectSpike, EffectSpikeGenerator } from "./EffectSpike";
+import gaussian from "gaussian";
+import Location from "./location";
 
 export default class Household {
-    public id: string;
+    public readonly id: string;
     public readonly owner: string;
 
     // House properties
     /** Total indoor area of household. Unit square meters [m²] */
     public readonly area: number;
-
     public readonly location: Location;
 
     // Consumption properties
@@ -17,9 +17,8 @@ export default class Household {
     public readonly baseConsumption: number;
     public readonly heatingEfficiency: number;
 
-    // Buffer
-    /** Energy in buffer. Unit Joule [J] */
-    public energyInBuffer: number; // J
+    // Battery
+    public readonly battery: Battery;
 
     // Production properties
     /** Number of active windturbines */
@@ -29,43 +28,51 @@ export default class Household {
     public readonly maximumWindturbineProduction: number;
 
     /** Cut-out windspeed during production. Unit meter per second [m/s] */
+    public readonly productionCutinWindspeed: number;
     public readonly productionCutoutWindspeed: number;
 
-    private consumptionNoiseDist: distribution;
     private consumptionHighSpikeGenerator: EffectSpikeGenerator;
     private consumptionHighSpike: EffectSpike;
 
-    constructor() {
-        this.numberOfActiveWindturbines = 2;
-        this.maximumWindturbineProduction = 3500;
-        this.productionCutoutWindspeed = 20;
+    constructor(
+        id: string,
+        owner: string,
+        area: number,
+        location: Location,
+        baseConsumption: number,
+        heatingEfficiency: number,
+        battery: Battery,
+        activeWindturbines: number,
+        maximumWindturbineProduction: number,
+        productionCutinWindspeed: number,
+        productionCutoutWindspeed: number,
+        consumptionSpikeAmplitudeMean: number,
+        consumptionSpikeAmplitudeVariance: number,
+        consumptionSpikeDurationMean: number,
+        consumptionSpikeDurationVariance: number
+    ) {
+        this.id = id;
+        this.owner = owner;
+        this.area = area;
+        this.location = location;
+        this.baseConsumption = baseConsumption;
+        this.heatingEfficiency = heatingEfficiency;
+        this.battery = battery;
+        this.numberOfActiveWindturbines = activeWindturbines;
+        this.maximumWindturbineProduction = maximumWindturbineProduction;
+        this.productionCutinWindspeed = productionCutinWindspeed;
+        this.productionCutoutWindspeed = productionCutoutWindspeed;
 
-        this.baseConsumption = 500;
-        this.consumptionHighSpikeGenerator = new EffectSpikeGenerator(1100, 3500, 15, 60);
-        this.consumptionNoiseDist = new TruncatedNormalDistribution(-100, 200);
+        this.consumptionHighSpikeGenerator = new EffectSpikeGenerator(
+            consumptionSpikeAmplitudeMean,
+            consumptionSpikeAmplitudeVariance,
+            consumptionSpikeDurationMean,
+            consumptionSpikeDurationVariance
+        );
     }
 
-    /**
-     * Add energy to buffer
-     * @param energy Energy to add to buffer. Unit Joule [J]
-     * @returns Total energy in buffer after more energy was added.
-     */
-    public AddEnergyToBuffer(energy: number): number {
-        this.energyInBuffer += energy;
-        return this.energyInBuffer;
-    }
-
-    /**
-     * Take energy stored in buffer. If more energy is taken than avaliable in
-     * the buffer, no energy is taken and an error is thrown.
-     * @param energyToTake Energy to take from buffer
-     * @returns Energy left in buffer after taking energy from buffer
-     */
-    public TakeEnergyInBuffer(energyToTake: number): number {
-        if (this.energyInBuffer < energyToTake) throw new Error("Exceeded avaliable energy in buffer");
-
-        this.energyInBuffer -= energyToTake;
-        return this.energyInBuffer;
+    public GetConsumptionNoise(): number {
+        return gaussian(0, 100).ppf(Math.random());
     }
 
     /**
@@ -83,7 +90,7 @@ export default class Household {
             this.consumptionHighSpike = undefined;
         }
 
-        const noise = this.consumptionNoiseDist.next();
+        const noise = this.GetConsumptionNoise();
         const highSpikeAmplitude =
             this.consumptionHighSpike === undefined ? 0 : this.consumptionHighSpike.amplitude;
 

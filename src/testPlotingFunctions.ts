@@ -3,6 +3,7 @@ import { electricityConsumption, electricityConsumption_spikeModel } from "./ele
 import { mean } from "./math/numberArrays";
 import { probabilityDensityFunction } from "./math/stastistics/guassian";
 import { TruncatedNormalDistribution } from "./math/stastistics/truncatedNormalDistribution";
+import { Battery } from "./models/Battery";
 import Household from "./models/household";
 import { WindspeedModel } from "./models/wind";
 
@@ -43,7 +44,23 @@ export function plotEnergyConsumption_normalDistModel() {
 export function plotEnergyConsumption_oneHousehold() {
     const consumption = new Array<number>();
     const time = new Array<Date>();
-    const household = new Household();
+    const household = new Household(
+        "",
+        "",
+        147,
+        undefined,
+        500,
+        0,
+        new Battery(0, 1e6),
+        3,
+        3500,
+        2,
+        20,
+        2300,
+        300,
+        35,
+        10
+    );
 
     for (let i = 0; i < 60 * 60 * 24; i++) {
         var date = new Date(new Date(2000, 0, 1, 0, 0, 0).getTime() + i * 1000);
@@ -60,8 +77,24 @@ export function plotEnergyConsumption_oneHousehold() {
 }
 
 export function plotEnergyProduction_oneHousehold() {
-    const household = new Household();
-    const windModel = new WindspeedModel();
+    const household = new Household(
+        "",
+        "",
+        147,
+        undefined,
+        500,
+        0,
+        new Battery(0, 1e6),
+        3,
+        3500,
+        2,
+        20,
+        2300,
+        300,
+        35,
+        10
+    );
+    const windModel = new WindspeedModel(4.5, 0.002, 0.34);
     const daysToPlot = 365;
 
     // Run simulation
@@ -119,11 +152,11 @@ export function plotGuassian() {
 export function plotWindspeedDuringYear() {
     const windspeed = new Array<number>();
     const time = new Array<Date>();
-    const windModel = new WindspeedModel();
+    const windModel = new WindspeedModel(4.5, 0.002, 0.34);
 
     console.log("Sampling data");
 
-    for (let i = 0; i < 60 * 60 * 24 * 365; i++) {
+    for (let i = 0; i < 60 * 60 * 24 * 180; i++) {
         var date = new Date(new Date(2000, 0, 1, 0, 0, 0).getTime() + i * 1000);
         time.push(date);
         windspeed.push(windModel.getWindSpeedAtHeight(49));

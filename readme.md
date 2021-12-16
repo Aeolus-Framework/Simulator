@@ -24,22 +24,27 @@ npm test
 ```
 
 ## Develop
-To rebuild and start the applicaiton when a file in the project is saved, use:
+To rebuild and start the application when a file in the project is saved, use:
 ```sh
 npm run dev
 ```
 
-# Build and run with `docker`
-Build docker image.
+# Enviroment variables avaliable
+| name                            | description                                                 |
+|---------------------------------|-------------------------------------------------------------|
+| `MONGODB_HOST`                  | Host with a mongo instance running, may include port number |
+| `MONGODB_DATABASE`              | Database to use                                             |
+| `MONGODB_USERNAME` *(optional)* | Username to access database                                 |
+| `MONGODB_PASSWORD` *(optional)* | Password to access database                                 |
+
+# Build and run with docker
+Build the docker image.
 ```sh
 docker build . -t aeolus/simulator
 ```
 
-Run a docker container with the newly built image and link the external port 49160 to container port 8080.
+Run a docker container with the newly built image.
 ```sh
 docker run -d aeolus/simulator
 ```
-To automatically start the container when docker is started unless the container was manually stopped add `--restart unless-stopped`.
-```sh
-docker run -d --restart unless-stopped aeolus/simulator
-```
+To add enviroment variables, add `--env VARIABLE=VALUE` for each enviroment variable to use.

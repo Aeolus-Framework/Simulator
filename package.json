@@ -22,6 +22,7 @@
         "@types/gaussian": "^1.1.4",
         "@types/jest": "^27.0.2",
         "babel-jest": "^27.3.1",
+        "dotenv": "^10.0.0",
         "jest": "^27.3.1",
         "prettier": "^2.4.1",
         "tsc-watch": "^4.5.0",

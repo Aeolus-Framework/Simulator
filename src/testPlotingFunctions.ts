@@ -59,7 +59,9 @@ export function plotEnergyConsumption_oneHousehold() {
         2300,
         300,
         35,
-        10
+        10,
+        0.5,
+        0.5
     );
 
     for (let i = 0; i < 60 * 60 * 24; i++) {
@@ -92,7 +94,9 @@ export function plotEnergyProduction_oneHousehold() {
         2300,
         300,
         35,
-        10
+        10,
+        0.5,
+        0.5
     );
     const windModel = new WindspeedModel(4.5, 0.002, 0.34);
     const daysToPlot = 365;

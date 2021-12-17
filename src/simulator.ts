@@ -8,6 +8,7 @@ import { production as ProductionDocument } from "./db/models/production";
 import { consumption as ConsumptionDocument } from "./db/models/consumption";
 import { household as HouseholdDocument } from "./db/models/household";
 import { batteryHistory as BatteryDocument } from "./db/models/battery";
+import { transmission as TransmissionDocument } from "./db/models/transmission";
 
 import "./db/dbconnect";
 
@@ -39,17 +40,21 @@ export class Simulator {
         this.households.forEach(household => {
             const productionNow = household.GetCurrentElectricityProduction(windNow);
             const consumptionNow = household.GetCurrentElectricityConsumption(timeNow);
-            const prodOverflow = productionNow - consumptionNow + 1000;
+            const productionOverflow = productionNow - consumptionNow;
+            let energyMarketTransmission = 0;
 
-            if (prodOverflow > 0) {
-                console.log(`Production overflow in household ${household.id}`);
+            if (productionOverflow > 0) {
+                energyMarketTransmission = productionOverflow * household.sellRatioOverProduction;
 
-                household.battery.charge(prodOverflow, 1);
-                new BatteryDocument({
-                    timestamp: timeNow,
-                    household: household.id,
-                    energy: household.battery.getCurrentEnergy()
-                }).save();
+                const energyToAddToBattery = productionOverflow * (1 - household.sellRatioOverProduction);
+                household.battery.charge(energyToAddToBattery, 1);
+            } else if (productionOverflow < 0) {
+                energyMarketTransmission = productionOverflow * household.buyRatioUnderProduction;
+
+                const energyToTakeFromBattery =
+                    Math.abs(productionOverflow) * (1 - household.buyRatioUnderProduction);
+                household.battery.useBattery(energyToTakeFromBattery, 1);
+                // TODO Handle blackout if not enough power to fulfill consumption.
             }
 
             new ProductionDocument({
@@ -62,6 +67,18 @@ export class Simulator {
                 household: household.id,
                 consumption: consumptionNow
             }).save();
+            new BatteryDocument({
+                timestamp: timeNow,
+                household: household.id,
+                energy: household.battery.getCurrentEnergy()
+            }).save();
+            if (energyMarketTransmission != 0) {
+                new TransmissionDocument({
+                    timestamp: timeNow,
+                    household: household.id,
+                    amount: energyMarketTransmission
+                }).save();
+            }
         });
 
         console.log(`Simulation cycle ${timeNow.toISOString()} finished`);
@@ -89,7 +106,9 @@ export class Simulator {
                     2300,
                     300,
                     35,
-                    10
+                    10,
+                    0.5,
+                    0.5
                 );
 
                 householdsToReturn.push(household);
@@ -112,7 +131,9 @@ export class Simulator {
                         household.consumptionSpike.AmplitudeMean,
                         household.consumptionSpike.AmplitudeVariance,
                         household.consumptionSpike.DurationMean,
-                        household.consumptionSpike.DurationVariance
+                        household.consumptionSpike.DurationVariance,
+                        household.sellRatioOverProduction,
+                        household.buyRatioUnderProduction
                     )
                 );
             }

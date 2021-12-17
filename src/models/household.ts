@@ -19,6 +19,8 @@ export default class Household {
 
     // Battery
     public readonly battery: Battery;
+    public readonly sellRatioOverProduction: number;
+    public readonly buyRatioUnderProduction: number;
 
     // Production properties
     /** Number of active windturbines */
@@ -49,7 +51,9 @@ export default class Household {
         consumptionSpikeAmplitudeMean: number,
         consumptionSpikeAmplitudeVariance: number,
         consumptionSpikeDurationMean: number,
-        consumptionSpikeDurationVariance: number
+        consumptionSpikeDurationVariance: number,
+        sellRatioOverProduction: number,
+        buyRatioUnderProduction: number
     ) {
         this.id = id;
         this.owner = owner;
@@ -69,6 +73,9 @@ export default class Household {
             consumptionSpikeDurationMean,
             consumptionSpikeDurationVariance
         );
+
+        this.sellRatioOverProduction = sellRatioOverProduction;
+        this.buyRatioUnderProduction = buyRatioUnderProduction;
     }
 
     public GetConsumptionNoise(): number {

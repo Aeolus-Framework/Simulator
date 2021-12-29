@@ -1,7 +1,21 @@
 import { Schema, model } from "mongoose";
 
+enum DashboardCardType {
+    Consumption,
+    Production,
+    Buffer,
+    ProductionEfficiency,
+    WindSpeed,
+    Temperature,
+    PricePerkWh
+}
+
 interface Household {
     owner: string;
+    dashboard: {
+        Cards: DashboardCardType[];
+    };
+    thumbnail: string;
     area: number;
     location: {
         latitude: number;
@@ -32,6 +46,10 @@ interface Household {
 var householdSchema = new Schema<Household>(
     {
         owner: String,
+        dashboard: {
+            Cards: [Number]
+        },
+        thumbnail: String,
         area: Number,
         location: {
             latitude: Number,

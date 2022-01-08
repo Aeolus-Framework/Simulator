@@ -1,20 +1,7 @@
 import { Schema, model } from "mongoose";
 
-enum DashboardCardType {
-    Consumption,
-    Production,
-    Buffer,
-    ProductionEfficiency,
-    WindSpeed,
-    Temperature,
-    PricePerkWh
-}
-
-interface Household {
+export class Household {
     owner: string;
-    dashboard: {
-        Cards: DashboardCardType[];
-    };
     thumbnail: string;
     area: number;
     location: {
@@ -41,14 +28,15 @@ interface Household {
         DurationMean: number;
         DurationVariance: number;
     };
+
+    constructor(init?: Partial<Household>) {
+        Object.assign(this, init);
+    }
 }
 
 var householdSchema = new Schema<Household>(
     {
         owner: String,
-        dashboard: {
-            Cards: [Number]
-        },
         thumbnail: String,
         area: Number,
         location: {

@@ -2,6 +2,8 @@ var mongoose = require("mongoose");
 
 export interface Market {
     name: string;
+    demand: number;
+    supply: number;
     price: {
         validUntil: Date;
         updatedAt: Date;
@@ -16,6 +18,14 @@ var marketSchema = new mongoose.Schema(
             type: String,
             unique: true,
             index: true
+        },
+        demand: {
+            type: Number,
+            min: 0
+        },
+        supply: {
+            type: Number,
+            min: 0
         },
         price: {
             validUntil: Date,

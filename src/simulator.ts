@@ -120,6 +120,8 @@ export class Simulator {
 
             market
                 .set({
+                    demand: marketDemand,
+                    supply: marketSupply,
                     price: {
                         validUntil: timeNowPlusOneSecond,
                         updatedAt: timeNow,

@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+var mongoose = require("mongoose");
 
 interface Battery {
     timestamp: Date;
@@ -6,7 +6,7 @@ interface Battery {
     energy: number;
 }
 
-var batterySchema = new Schema<Battery>(
+var batterySchema = new mongoose.Schema(
     {
         timestamp: Date,
         household: String,
@@ -15,4 +15,4 @@ var batterySchema = new Schema<Battery>(
     { versionKey: false }
 );
 
-export const batteryHistory = model<Battery>("batteryHistory", batterySchema);
+export const batteryHistory = mongoose.model("batteryHistory", batterySchema);

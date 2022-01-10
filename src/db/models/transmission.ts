@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+var mongoose = require("mongoose");
 
 interface Transmission {
     timestamp: Date;
@@ -6,7 +6,7 @@ interface Transmission {
     amount: number;
 }
 
-var transmissionSchema = new Schema<Transmission>(
+var transmissionSchema = new mongoose.Schema(
     {
         timestamp: Date,
         household: String,
@@ -15,4 +15,4 @@ var transmissionSchema = new Schema<Transmission>(
     { versionKey: false }
 );
 
-export const transmission = model<Transmission>("transmission", transmissionSchema);
+export const transmission = mongoose.model("transmission", transmissionSchema);

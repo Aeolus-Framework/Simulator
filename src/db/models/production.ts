@@ -1,17 +1,16 @@
-import { Double } from "bson";
-import mongoose from "mongoose";
+var mongoose = require("mongoose");
+
+interface Production {
+    timestamp: Date;
+    household: string;
+    production: number;
+}
 
 var productionSchema = new mongoose.Schema(
     {
-        timestamp: {
-            type: Date
-        },
-        household: {
-            type: String
-        },
-        production: {
-            type: Number
-        }
+        timestamp: Date,
+        household: String,
+        production: Number
     },
     { versionKey: false }
 );

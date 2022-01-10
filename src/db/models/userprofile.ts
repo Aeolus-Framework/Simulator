@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+var mongoose = require("mongoose");
 
 export enum DashboardCardType {
     Consumption,
@@ -24,7 +24,7 @@ interface Userprofile {
     loginProvider: LoginProvider;
 }
 
-var userprofileSchema = new Schema<Userprofile>(
+var userprofileSchema = new mongoose.Schema(
     {
         firstname: String,
         lastname: String,
@@ -36,4 +36,4 @@ var userprofileSchema = new Schema<Userprofile>(
     { versionKey: true }
 );
 
-export const userprofile = model<Userprofile>("userprofile", userprofileSchema);
+export const userprofile = mongoose.model("userprofile", userprofileSchema);

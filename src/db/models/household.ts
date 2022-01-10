@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+var mongoose = require("mongoose");
 
 export class Household {
     owner: string;
@@ -34,37 +34,64 @@ export class Household {
     }
 }
 
-var householdSchema = new Schema<Household>(
+var householdSchema = new mongoose.Schema(
     {
-        owner: String,
+        owner: { type: String, required: true },
         thumbnail: String,
-        area: Number,
+        name: { type: String, required: true },
+        area: { type: Number, required: true, min: 0 },
         location: {
-            latitude: Number,
-            longitude: Number
+            latitude: { type: Number, required: true, min: -90, max: 90 },
+            longitude: { type: Number, required: true, min: -180, max: 180 }
         },
-        blackout: Boolean,
-        baseConsumption: Number,
-        heatingEfficiency: Number,
+        blackout: { type: Boolean, required: false, default: false },
+        baseConsumption: { type: Number, required: true, min: 0 },
+        heatingEfficiency: { type: Number, required: false, min: 0, default: 0 },
         battery: {
-            maxCapacity: Number
+            maxCapacity: { type: Number, required: true, min: 0 }
         },
-        sellRatioOverProduction: Number,
-        buyRatioUnderProduction: Number,
+        sellRatioOverProduction: { type: Number, required: true, min: 0, max: 1 },
+        buyRatioUnderProduction: { type: Number, required: true, min: 0, max: 1 },
         windTurbines: {
-            active: Number,
-            maximumProduction: Number,
-            cutinWindspeed: Number,
-            cutoutWindspeed: Number
+            active: { type: Number, required: true, min: 0 },
+            maximumProduction: { type: Number, required: true, min: 0 },
+            cutinWindspeed: {
+                type: Number,
+                required: true,
+                min: 0,
+                validate: [validatorCutinWindspeed, "Cutin windspeed must be less than cutout windspeed"]
+            },
+            cutoutWindspeed: {
+                type: Number,
+                required: true,
+                min: 0,
+                validate: [validatorCutoutWindspeed, "Cutout windspeed must be greater than cutin windspeed"]
+            }
         },
         consumptionSpike: {
-            AmplitudeMean: Number,
-            AmplitudeVariance: Number,
-            DurationMean: Number,
-            DurationVariance: Number
+            AmplitudeMean: { type: Number, required: true },
+            AmplitudeVariance: { type: Number, required: true },
+            DurationMean: { type: Number, required: true },
+            DurationVariance: { type: Number, required: true }
         }
     },
     { versionKey: false }
 );
 
-export const household = model<Household>("household", householdSchema);
+export const household = mongoose.model("household", householdSchema);
+
+function validatorCutinWindspeed(value: number): boolean {
+    return this.windTurbines.cutoutWindspeed > value;
+}
+
+function validatorCutoutWindspeed(value: number): boolean {
+    return this.windTurbines.cutinWindspeed < value;
+}
+
+/**
+ * Check wether a household exist
+ * @param id Id of household
+ */
+export async function householdExist(id: string): Promise<boolean> {
+    return await household.exist({ _id: id });
+}

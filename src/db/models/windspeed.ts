@@ -1,14 +1,14 @@
-import { Double } from "bson";
-import mongoose from "mongoose";
+var mongoose = require("mongoose");
+
+interface Windspeed {
+    timestamp: Date;
+    windspeed: number;
+}
 
 var windspeedSchema = new mongoose.Schema(
     {
-        timestamp: {
-            type: Date
-        },
-        windspeed: {
-            type: Number
-        }
+        timestamp: Date,
+        windspeed: Number
     },
     { versionKey: false }
 );

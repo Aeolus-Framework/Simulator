@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+var mongoose = require("mongoose");
 
 const DB_HOST = process.env.MONGODB_HOST;
 const DB_NAME = process.env.MONGODB_DATABASE;

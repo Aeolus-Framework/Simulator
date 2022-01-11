@@ -9,7 +9,8 @@ import { consumption as ConsumptionDocument } from "./db/models/consumption";
 import { household as HouseholdDocument } from "./db/models/household";
 import { batteryHistory as BatteryDocument } from "./db/models/battery";
 import { transmission as TransmissionDocument } from "./db/models/transmission";
-import { market as MarketCollection } from "./db/models/market";
+import { market, market as MarketCollection } from "./db/models/market";
+import { powerplant as PowerplantCollection } from "./db/models/powerplant";
 
 import "./db/dbconnect";
 
@@ -32,13 +33,20 @@ export class Simulator {
      */
     private marketName: string;
 
+    /**
+     * Name of powerplant to generate electricity in case of prosumer underproduction.
+     */
+    private powerplantName: string;
+
     // TODO Add simulator parameters
+    // TODO Add parameter to set at which rate simulationdata is saved to DB
     constructor() {
         this.windmodel = new WindspeedModel(4.5, 0.002, 0.34);
         this.households = [];
         this.basePrice = 0.7;
         this.marketDemandEffect = 1;
         this.marketName = "default";
+        this.powerplantName = "default";
     }
 
     async start() {
@@ -50,25 +58,32 @@ export class Simulator {
         console.log("Simulation cycle");
         const timeNow = new Date(new Date().setMilliseconds(0));
         const windNow = this.windmodel.getWindSpeedAtHeight(15);
+        const [market, powerplant] = await Promise.all([
+            MarketCollection.findOne({ name: this.marketName }),
+            PowerplantCollection.findOne({ name: this.powerplantName })
+        ]);
 
-        new WindspeedDocument({
-            timestamp: timeNow,
-            windspeed: windNow
-        }).save();
+        if (market === null) {
+            throw new Error(`The requested market with name "${this.marketName}" was not found`);
+        }
+        if (powerplant === null) {
+            throw new Error(`The requested powerplant with name "${this.powerplantName}" was not found`);
+        }
 
-        let marketDemand = 0;
-        let marketSupply = 0;
+        let marketDemand = 0; // unit watthour (Wh)
+        let marketSupply = 0; // unit watthour (Wh)
         this.households.forEach(household => {
             const productionNow = household.GetCurrentElectricityProduction(windNow);
             const consumptionNow = household.GetCurrentElectricityConsumption(timeNow);
             const productionOverflow = productionNow - consumptionNow;
             let energyMarketTransmission = 0;
+            let blackout = false;
 
             if (productionOverflow > 0) {
                 // Sell to market
                 energyMarketTransmission = productionOverflow * household.sellRatioOverProduction;
 
-                marketSupply += energyMarketTransmission;
+                marketSupply += energyMarketTransmission * 1e-3;
 
                 const energyToAddToBattery = productionOverflow * (1 - household.sellRatioOverProduction);
                 household.battery.charge(energyToAddToBattery, 1);
@@ -76,60 +91,37 @@ export class Simulator {
                 // Buy from market
                 energyMarketTransmission = productionOverflow * household.buyRatioUnderProduction;
 
-                marketDemand += Math.abs(energyMarketTransmission);
+                marketDemand += Math.abs(energyMarketTransmission * 1e-3);
 
                 const energyToTakeFromBattery =
                     Math.abs(productionOverflow) * (1 - household.buyRatioUnderProduction);
-                household.battery.useBattery(energyToTakeFromBattery, 1);
-                // TODO Handle blackout if not enough power to fulfill consumption.
+                const energyTakenFromBattery = household.battery.useBattery(energyToTakeFromBattery, 1);
+
+                if (!powerplant.active) {
+                    const energyShortage = energyToTakeFromBattery - energyTakenFromBattery < 0;
+                    if (energyShortage) blackout = true;
+                }
             }
 
-            new ProductionDocument({
-                timestamp: timeNow,
-                household: household.id,
-                production: productionNow
-            }).save();
-            new ConsumptionDocument({
-                timestamp: timeNow,
-                household: household.id,
-                consumption: consumptionNow
-            }).save();
-            new BatteryDocument({
-                timestamp: timeNow,
-                household: household.id,
-                energy: household.battery.getCurrentEnergy()
-            }).save();
-            if (energyMarketTransmission != 0) {
-                new TransmissionDocument({
-                    timestamp: timeNow,
-                    household: household.id,
-                    amount: energyMarketTransmission
-                }).save();
-            }
+            this.saveHouseholdSimulationCycleToDB({
+                time: timeNow,
+                blackout: blackout,
+                householdId: household.id,
+                production: productionNow,
+                consumption: consumptionNow,
+                batteryEnergy: household.battery.getCurrentEnergy(),
+                energyMarketTransmission: energyMarketTransmission
+            });
         });
 
-        const market = await MarketCollection.findOne({ name: this.marketName });
-
-        if (market === null) {
-            throw new Error(`The requested market with name "${this.marketName}" was not found`);
-        }
-
         if (market.price.validUntil <= timeNow) {
-            const timeNowPlusOneSecond = new Date(timeNow.getTime() + 1000);
-            const newPrice = this.calculatePrice(marketSupply * 1e-3, marketDemand * 1e-3);
-
-            market
-                .set({
-                    demand: marketDemand,
-                    supply: marketSupply,
-                    price: {
-                        validUntil: timeNowPlusOneSecond,
-                        updatedAt: timeNow,
-                        value: newPrice
-                    }
-                })
-                .save();
+            market.price.validUntil = new Date(timeNow.getTime() + 1000);
+            market.price.value = this.calculatePrice(marketSupply, marketDemand);
         }
+        market.demand = marketDemand;
+        market.supply = marketSupply;
+
+        this.saveOuterSimulationCycleToDb(timeNow, windNow, market);
 
         console.log(`Simulation cycle ${timeNow.toISOString()} finished`);
         setTimeout(this.runNextSimCycle.bind(this), this.millisecondsToNextSecond());
@@ -207,5 +199,52 @@ export class Simulator {
     millisecondsToNextSecond(): number {
         const timeNow = new Date();
         return 1000 - timeNow.getMilliseconds();
+    }
+
+    saveHouseholdSimulationCycleToDB(data: {
+        time: Date;
+        blackout: boolean;
+        householdId: string;
+        production: number;
+        consumption: number;
+        batteryEnergy: number;
+        energyMarketTransmission: number;
+    }): void {
+        HouseholdDocument.findByIdAndUpdate(data.householdId, { blackout: data.blackout }).exec();
+
+        new ProductionDocument({
+            timestamp: data.time,
+            household: data.householdId,
+            production: data.production
+        }).save();
+
+        new ConsumptionDocument({
+            timestamp: data.time,
+            household: data.householdId,
+            consumption: data.consumption
+        }).save();
+
+        new BatteryDocument({
+            timestamp: data.time,
+            household: data.householdId,
+            energy: data.batteryEnergy
+        }).save();
+
+        if (data.energyMarketTransmission != 0) {
+            new TransmissionDocument({
+                timestamp: data.time,
+                household: data.householdId,
+                amount: data.energyMarketTransmission
+            }).save();
+        }
+    }
+
+    saveOuterSimulationCycleToDb(time: Date, windspeed: number, market: any): void {
+        market.save();
+
+        new WindspeedDocument({
+            timestamp: time,
+            windspeed: windspeed
+        }).save();
     }
 }

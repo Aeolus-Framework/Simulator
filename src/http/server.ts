@@ -27,12 +27,18 @@ export default class HttpServer {
         });
     }
 
-    async HEAD_reloadSimulation(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+    async HEAD_reloadSimulation(
+        req: http.IncomingMessage,
+        res: http.ServerResponse
+    ): Promise<http.ServerResponse> {
         // TODO Implement
         return res.writeHead(501).end();
     }
 
-    async HEAD_reloadHousehold(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+    async HEAD_reloadHousehold(
+        req: http.IncomingMessage,
+        res: http.ServerResponse
+    ): Promise<http.ServerResponse> {
         const searchParams = getUrl(req).searchParams;
         const householdId = searchParams.get("id");
 

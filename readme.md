@@ -1,3 +1,7 @@
+# Simulator
+
+![Build Status](https://jenkins.aeolus.se/buildStatus/icon?job=aeolus-simulator)
+
 # Usage
 First, install all dependencies
 ```sh

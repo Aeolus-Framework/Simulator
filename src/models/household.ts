@@ -2,80 +2,77 @@ import { Battery } from "./Battery";
 import { EffectSpike, EffectSpikeGenerator } from "./EffectSpike";
 import gaussian from "gaussian";
 import Location from "./location";
+import {type Household as HouseholdInterface } from "../db/models/household";
 
 export default class Household {
     public readonly id: string;
-    public readonly owner: string;
+    public owner: string;
 
     // House properties
     /** Total indoor area of household. Unit square meters [m²] */
-    public readonly area: number;
+    public area: number;
     public readonly location: Location;
 
     // Consumption properties
     /** Consumption during low peak hours  */
-    public readonly baseConsumption: number;
-    public readonly heatingEfficiency: number;
+    public baseConsumption: number;
+    public heatingEfficiency: number;
 
     // Battery
-    public readonly battery: Battery;
-    public readonly sellRatioOverProduction: number;
-    public readonly buyRatioUnderProduction: number;
+    public battery: Battery;
+    public sellRatioOverProduction: number;
+    public buyRatioUnderProduction: number;
 
     // Production properties
     /** Number of active windturbines */
-    public readonly numberOfActiveWindturbines: number;
+    public numberOfActiveWindturbines: number;
 
     /** Maximum production of a windturbine. Unit Watt [W] */
-    public readonly maximumWindturbineProduction: number;
+    public maximumWindturbineProduction: number;
 
     /** Cut-out windspeed during production. Unit meter per second [m/s] */
-    public readonly productionCutinWindspeed: number;
-    public readonly productionCutoutWindspeed: number;
+    public productionCutinWindspeed: number;
+    public productionCutoutWindspeed: number;
 
     private consumptionHighSpikeGenerator: EffectSpikeGenerator;
     private consumptionHighSpike: EffectSpike;
 
-    constructor(
-        id: string,
-        owner: string,
-        area: number,
-        location: Location,
-        baseConsumption: number,
-        heatingEfficiency: number,
-        battery: Battery,
-        activeWindturbines: number,
-        maximumWindturbineProduction: number,
-        productionCutinWindspeed: number,
-        productionCutoutWindspeed: number,
-        consumptionSpikeAmplitudeMean: number,
-        consumptionSpikeAmplitudeVariance: number,
-        consumptionSpikeDurationMean: number,
-        consumptionSpikeDurationVariance: number,
-        sellRatioOverProduction: number,
-        buyRatioUnderProduction: number
-    ) {
+    constructor(id: string, data: HouseholdInterface) {
         this.id = id;
-        this.owner = owner;
-        this.area = area;
-        this.location = location;
-        this.baseConsumption = baseConsumption;
-        this.heatingEfficiency = heatingEfficiency;
-        this.battery = battery;
-        this.numberOfActiveWindturbines = activeWindturbines;
-        this.maximumWindturbineProduction = maximumWindturbineProduction;
-        this.productionCutinWindspeed = productionCutinWindspeed;
-        this.productionCutoutWindspeed = productionCutoutWindspeed;
+        this.location = new Location(data.location.latitude, data.location.longitude);
+        this.battery = new Battery(0, data.battery.maxCapacity);
+        this.SetParameters(data);
+    }
 
-        this.consumptionHighSpikeGenerator = new EffectSpikeGenerator(
-            consumptionSpikeAmplitudeMean,
-            consumptionSpikeAmplitudeVariance,
-            consumptionSpikeDurationMean,
-            consumptionSpikeDurationVariance
-        );
+    public SetParameters(data: HouseholdInterface) {
+        this.owner = data.owner;
+        this.area = data.area;
+        this.location.latitude = data.location.latitude;
+        this.location.longitude = data.location.longitude;
+        this.baseConsumption = data.baseConsumption;
+        this.heatingEfficiency = data.heatingEfficiency;
+        this.battery.maxEnergy = data.battery.maxCapacity;
+        this.numberOfActiveWindturbines = data.windTurbines.active;
+        this.maximumWindturbineProduction = data.windTurbines.maximumProduction;
+        this.productionCutinWindspeed = data.windTurbines.cutinWindspeed;
+        this.productionCutoutWindspeed = data.windTurbines.cutoutWindspeed;
 
-        this.sellRatioOverProduction = sellRatioOverProduction;
-        this.buyRatioUnderProduction = buyRatioUnderProduction;
+        if (!this.consumptionHighSpikeGenerator) {
+            this.consumptionHighSpikeGenerator = new EffectSpikeGenerator(
+                data.consumptionSpike.AmplitudeMean,
+                data.consumptionSpike.AmplitudeVariance,
+                data.consumptionSpike.DurationMean,
+                data.consumptionSpike.DurationVariance
+            );
+        } else {
+            this.consumptionHighSpikeGenerator.amplitudeMean = data.consumptionSpike.AmplitudeMean;
+            this.consumptionHighSpikeGenerator.amplitudeVariance = data.consumptionSpike.AmplitudeVariance;
+            this.consumptionHighSpikeGenerator.durationMean = data.consumptionSpike.DurationMean;
+            this.consumptionHighSpikeGenerator.durationVariance = data.consumptionSpike.DurationVariance;
+        }
+
+        this.sellRatioOverProduction = data.sellRatioOverProduction;
+        this.buyRatioUnderProduction = data.buyRatioUnderProduction;
     }
 
     public GetConsumptionNoise(): number {

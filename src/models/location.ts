@@ -1,6 +1,6 @@
 export default class Location {
-    public readonly latitude: number;
-    public readonly longitude: number;
+    public latitude: number;
+    public longitude: number;
 
     constructor(latitude: number, longitude: number) {
         this.latitude = latitude;

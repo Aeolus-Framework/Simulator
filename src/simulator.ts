@@ -1,18 +1,14 @@
 import Household from "./models/household";
-import Location from "./models/location";
-import { Battery } from "./models/Battery";
 import { WindspeedModel } from "./models/wind";
 
 import { windspeed as WindspeedDocument } from "./db/models/windspeed";
 import { production as ProductionDocument } from "./db/models/production";
 import { consumption as ConsumptionDocument } from "./db/models/consumption";
-import { household as HouseholdDocument } from "./db/models/household";
+import { Household as HouseholdInterface, household as HouseholdDocument } from "./db/models/household";
 import { batteryHistory as BatteryDocument } from "./db/models/battery";
 import { transmission as TransmissionDocument } from "./db/models/transmission";
-import { market, market as MarketCollection } from "./db/models/market";
+import { market as MarketCollection } from "./db/models/market";
 import { powerplant as PowerplantCollection } from "./db/models/powerplant";
-
-import "./db/dbconnect";
 
 export class Simulator {
     private windmodel: WindspeedModel;
@@ -38,8 +34,9 @@ export class Simulator {
      */
     private powerplantName: string;
 
-    // TODO Add simulator parameters
-    // TODO Add parameter to set at which rate simulationdata is saved to DB
+    // TODO #14 Add simulator parameters
+    // TODO #15 Add parameter to set at which rate simulationdata is saved to DB
+    // TODO #16 Add parameter to set initial windspeed as last value from DB, if no last value set value to 4.5
     constructor() {
         this.windmodel = new WindspeedModel(4.5, 0.002, 0.34);
         this.households = [];
@@ -54,7 +51,7 @@ export class Simulator {
         this.runNextSimCycle();
     }
 
-    async runNextSimCycle(): Promise<void> {
+    private async runNextSimCycle(): Promise<void> {
         console.log("Simulation cycle");
         const timeNow = new Date(new Date().setMilliseconds(0));
         const windNow = this.windmodel.getWindSpeedAtHeight(15);
@@ -127,61 +124,33 @@ export class Simulator {
         setTimeout(this.runNextSimCycle.bind(this), this.millisecondsToNextSecond());
     }
 
-    async getHouseholdsInDB(): Promise<Household[]> {
+    private async getHouseholdsInDB(): Promise<Household[]> {
         let householdsInDB = await HouseholdDocument.find();
 
         let householdsToReturn = new Array<Household>();
-        if (householdsInDB.length == 0) {
-            for (let i = 0; i < 5; i++) {
-                const household = new Household(
-                    i.toString(),
-                    "9d598d69-c660-4085-b0aa-830106e3a09e",
-                    147,
-                    undefined,
-                    500,
-                    0,
-                    new Battery(0, 1e6),
-                    3,
-                    3500,
-                    2,
-                    20,
-                    2300,
-                    300,
-                    35,
-                    10,
-                    0.5,
-                    0.5
-                );
-
-                householdsToReturn.push(household);
-            }
-        } else {
-            for (const household of householdsInDB) {
-                householdsToReturn.push(
-                    new Household(
-                        household._id,
-                        household.owner,
-                        household.area,
-                        new Location(household.location.latitude, household.location.longitude),
-                        household.baseConsumption,
-                        household.heatingEfficiency,
-                        new Battery(0, household.battery.maxCapacity),
-                        household.windTurbines.active,
-                        household.windTurbines.maximumProduction,
-                        household.windTurbines.cutinWindspeed,
-                        household.windTurbines.cutoutWindspeed,
-                        household.consumptionSpike.AmplitudeMean,
-                        household.consumptionSpike.AmplitudeVariance,
-                        household.consumptionSpike.DurationMean,
-                        household.consumptionSpike.DurationVariance,
-                        household.sellRatioOverProduction,
-                        household.buyRatioUnderProduction
-                    )
-                );
-            }
+        for (const household of householdsInDB) {
+            householdsToReturn.push(
+                new Household(household._id.toString(), ConstructHouseholdInterface(household))
+            );
         }
 
         return householdsToReturn;
+    }
+
+    async reloadHouseholdToSimulator(householdId: string): Promise<void> {
+        const currentHousehold = this.households.find(household => household.id === householdId);
+        const householdFromDb = await HouseholdDocument.findOne({ _id: householdId });
+
+        if (householdFromDb === null) return;
+
+        const householdData = ConstructHouseholdInterface(householdFromDb);
+
+        if (currentHousehold === undefined) {
+            this.households.push(new Household(householdFromDb._id.toString(), householdData));
+        } else {
+            currentHousehold.SetParameters(householdData);
+        }
+        console.log(`Household ${householdId} has been reloaded to the simulation`);
     }
 
     /**
@@ -190,18 +159,18 @@ export class Simulator {
      * @param supply Supply in kilowatthours (kWh)
      * @returns price per kilowatthour (kWh) in sek.
      */
-    calculatePrice(supply: number, demand: number): number {
+    private calculatePrice(supply: number, demand: number): number {
         if (supply == 0) return 0;
 
         return this.basePrice * (demand / supply) * this.marketDemandEffect;
     }
 
-    millisecondsToNextSecond(): number {
+    private millisecondsToNextSecond(): number {
         const timeNow = new Date();
         return 1000 - timeNow.getMilliseconds();
     }
 
-    saveHouseholdSimulationCycleToDB(data: {
+    private saveHouseholdSimulationCycleToDB(data: {
         time: Date;
         blackout: boolean;
         householdId: string;
@@ -239,7 +208,7 @@ export class Simulator {
         }
     }
 
-    saveOuterSimulationCycleToDb(time: Date, windspeed: number, market: any): void {
+    private saveOuterSimulationCycleToDb(time: Date, windspeed: number, market: any): void {
         market.save();
 
         new WindspeedDocument({
@@ -247,4 +216,35 @@ export class Simulator {
             windspeed: windspeed
         }).save();
     }
+}
+
+function ConstructHouseholdInterface(object: any): HouseholdInterface {
+    return {
+        owner: object.owner,
+        area: object.area,
+        location: {
+            latitude: object.location.latitude,
+            longitude: object.location.longitude
+        },
+        blackout: object.blackout,
+        baseConsumption: object.baseConsumption,
+        heatingEfficiency: object.heatingEfficiency,
+        battery: {
+            maxCapacity: object.battery.maxCapacity
+        },
+        sellRatioOverProduction: object.sellRatioOverProduction,
+        buyRatioUnderProduction: object.buyRatioUnderProduction,
+        windTurbines: {
+            active: object.windTurbines.active,
+            maximumProduction: object.windTurbines.maximumProduction,
+            cutinWindspeed: object.windTurbines.cutinWindspeed,
+            cutoutWindspeed: object.windTurbines.cutoutWindspeed
+        },
+        consumptionSpike: {
+            AmplitudeMean: object.consumptionSpike.AmplitudeMean,
+            AmplitudeVariance: object.consumptionSpike.AmplitudeVariance,
+            DurationMean: object.consumptionSpike.DurationMean,
+            DurationVariance: object.consumptionSpike.DurationVariance
+        }
+    };
 }

@@ -1,5 +1,5 @@
 export class Battery {
-    public readonly maxEnergy: number;
+    public maxEnergy: number;
     public readonly minEnergy: number;
 
     private currentEnergy: number;

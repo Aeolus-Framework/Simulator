@@ -24,4 +24,5 @@ RUN npm install
 # Copy app built from build stage
 COPY --from=build /usr/src/app/dist dist
 
+EXPOSE 8080
 CMD [ "npm", "start" ]

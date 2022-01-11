@@ -1,8 +1,8 @@
 var mongoose = require("mongoose");
 
-export class Household {
+export interface Household {
     owner: string;
-    thumbnail: string;
+    thumbnail?: string;
     area: number;
     location: {
         latitude: number;
@@ -28,10 +28,6 @@ export class Household {
         DurationMean: number;
         DurationVariance: number;
     };
-
-    constructor(init?: Partial<Household>) {
-        Object.assign(this, init);
-    }
 }
 
 var householdSchema = new mongoose.Schema(

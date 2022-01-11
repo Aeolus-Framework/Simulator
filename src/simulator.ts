@@ -1,7 +1,7 @@
 import Household from "./models/household";
 import { WindspeedModel } from "./models/wind";
 
-import { windspeed as WindspeedDocument } from "./db/models/windspeed";
+import { getLatestWindspeed, windspeed as WindspeedDocument } from "./db/models/windspeed";
 import { production as ProductionDocument } from "./db/models/production";
 import { consumption as ConsumptionDocument } from "./db/models/consumption";
 import { Household as HouseholdInterface, household as HouseholdDocument } from "./db/models/household";
@@ -12,6 +12,11 @@ import { powerplant as PowerplantCollection } from "./db/models/powerplant";
 
 export class Simulator {
     private windmodel: WindspeedModel;
+    private windmodelParameters: {
+        maxwindspeedChange: number;
+        hellmanExponent: number;
+        initialWindspeed: number;
+    };
     private households: Household[];
 
     /**
@@ -36,9 +41,12 @@ export class Simulator {
 
     // TODO #14 Add simulator parameters
     // TODO #15 Add parameter to set at which rate simulationdata is saved to DB
-    // TODO #16 Add parameter to set initial windspeed as last value from DB, if no last value set value to 4.5
     constructor() {
-        this.windmodel = new WindspeedModel(4.5, 0.002, 0.34);
+        this.windmodelParameters = {
+            initialWindspeed: 4.5,
+            maxwindspeedChange: 0.002,
+            hellmanExponent: 0.34
+        };
         this.households = [];
         this.basePrice = 0.7;
         this.marketDemandEffect = 1;
@@ -47,7 +55,18 @@ export class Simulator {
     }
 
     async start() {
-        this.households = await this.getHouseholdsInDB();
+        const [households, initialWindspeed] = await Promise.all([
+            this.getHouseholdsInDB(),
+            getLatestWindspeed()
+        ]);
+
+        this.households = households;
+        this.windmodel = new WindspeedModel(
+            initialWindspeed || this.windmodelParameters.initialWindspeed,
+            this.windmodelParameters.maxwindspeedChange,
+            this.windmodelParameters.hellmanExponent
+        );
+
         this.runNextSimCycle();
     }
 

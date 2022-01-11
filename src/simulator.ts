@@ -10,6 +10,19 @@ import { transmission as TransmissionDocument } from "./db/models/transmission";
 import { market as MarketCollection } from "./db/models/market";
 import { powerplant as PowerplantCollection } from "./db/models/powerplant";
 
+export interface SimulatorParameters {
+    windspeed: {
+        maxWindspeedChange: number;
+        hellmanExponent: number;
+        initialWindspeed: number;
+    };
+    market: {
+        demandEffect: number;
+        name: string;
+    };
+    powerplantName: string;
+}
+
 export class Simulator {
     private windmodel: WindspeedModel;
     private windmodelParameters: {
@@ -34,18 +47,17 @@ export class Simulator {
      */
     private powerplantName: string;
 
-    // TODO #14 Add simulator parameters
     // TODO #15 Add parameter to set at which rate simulationdata is saved to DB
-    constructor() {
+    constructor(options: SimulatorParameters) {
         this.windmodelParameters = {
-            initialWindspeed: 4.5,
-            maxwindspeedChange: 0.002,
-            hellmanExponent: 0.34
+            initialWindspeed: options.windspeed.initialWindspeed,
+            maxwindspeedChange: options.windspeed.maxWindspeedChange,
+            hellmanExponent: options.windspeed.hellmanExponent
         };
         this.households = [];
-        this.marketDemandEffect = 1;
-        this.marketName = "default";
-        this.powerplantName = "default";
+        this.marketDemandEffect = options.market.demandEffect;
+        this.marketName = options.market.name;
+        this.powerplantName = options.powerplantName;
     }
 
     async start() {

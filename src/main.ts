@@ -2,25 +2,15 @@ if (process.env.NODE_ENV === "development") {
     require("dotenv").config();
 }
 
-import {
-    plotEnergyConsumption_normalDistModel,
-    plotEnergyConsumption_spikeModel,
-    plotEnergyConsumption_oneHousehold,
-    plotEnergyProduction_oneHousehold,
-    plotWindspeedDuringYear,
-    plotGuassian,
-    plotTruncatedNormalDist
-} from "./testPlotingFunctions";
 import { Simulator } from "./simulator";
+import { defaultCollectionsExist, generateDefaultCollections } from "./db/defaultCollections";
 
 import "./db/dbconnect";
 
-//plotEnergyConsumption_normalDistModel();
-//plotEnergyConsumption_spikeModel();
-//plotEnergyConsumption_oneHousehold();
-//plotEnergyProduction_oneHousehold();
-//plotWindspeedDuringYear();
-//plotGuassian();
-//plotTruncatedNormalDist();
+(async () => {
+    if (!(await defaultCollectionsExist())) {
+        await generateDefaultCollections();
+    }
 
-new Simulator().start();
+    new Simulator().start();
+})();

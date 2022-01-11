@@ -7,7 +7,7 @@ import { Simulator } from "./simulator";
 import { defaultCollectionsExist, generateDefaultCollections } from "./db/defaultCollections";
 import "./db/dbconnect";
 
-const httpPort = 8081;
+const httpPort = 8080;
 
 (async () => {
     const simulator = new Simulator();

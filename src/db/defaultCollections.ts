@@ -16,6 +16,7 @@ export async function generateDefaultCollections(): Promise<void> {
             name: MARKET_DEFAULT_DB_NAME,
             demand: 0,
             supply: 0,
+            basePrice: 0.7,
             price: {
                 currency: "sek"
             }

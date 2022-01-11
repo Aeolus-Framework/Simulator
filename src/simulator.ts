@@ -20,11 +20,6 @@ export class Simulator {
     private households: Household[];
 
     /**
-     * The base price for market as sek/kWh. If `demand == supply`, the value of basePrice will be the current price.
-     */
-    private basePrice: number;
-
-    /**
      * The effect the market demand will have on the final price.
      */
     private marketDemandEffect: number;
@@ -48,7 +43,6 @@ export class Simulator {
             hellmanExponent: 0.34
         };
         this.households = [];
-        this.basePrice = 0.7;
         this.marketDemandEffect = 1;
         this.marketName = "default";
         this.powerplantName = "default";
@@ -132,7 +126,7 @@ export class Simulator {
 
         if (market.price.validUntil <= timeNow) {
             market.price.validUntil = new Date(timeNow.getTime() + 1000);
-            market.price.value = this.calculatePrice(marketSupply, marketDemand);
+            market.price.value = this.calculatePrice(market.basePrice, marketSupply, marketDemand);
         }
         market.demand = marketDemand;
         market.supply = marketSupply;
@@ -174,14 +168,15 @@ export class Simulator {
 
     /**
      * Calculate the price based on market supply and demand
+     * @param basePrice The base price for market as sek/kWh
      * @param demand Demand in kilowatthours (kWh)
      * @param supply Supply in kilowatthours (kWh)
      * @returns price per kilowatthour (kWh) in sek.
      */
-    private calculatePrice(supply: number, demand: number): number {
+    private calculatePrice(basePrice: number, supply: number, demand: number): number {
         if (supply == 0) return 0;
 
-        return this.basePrice * (demand / supply) * this.marketDemandEffect;
+        return basePrice * (demand / supply) * this.marketDemandEffect;
     }
 
     private millisecondsToNextSecond(): number {

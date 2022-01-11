@@ -4,6 +4,7 @@ export interface Market {
     name: string;
     demand: number;
     supply: number;
+    bastPrice: number;
     price: {
         validUntil: Date;
         updatedAt: Date;
@@ -26,6 +27,10 @@ var marketSchema = new mongoose.Schema(
         supply: {
             type: Number,
             min: 0
+        },
+        basePrice: {
+            type: Number,
+            required: true
         },
         price: {
             validUntil: Date,

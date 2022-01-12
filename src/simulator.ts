@@ -92,11 +92,16 @@ export class Simulator {
             throw new Error(`The requested powerplant with name "${this.powerplantName}" was not found`);
         }
 
-        let marketDemand = 0; // unit watthour (Wh)
-        let marketSupply = 0; // unit watthour (Wh)
+        /** Marketdemand in kilowatthours (kWh) */
+        let marketDemand = 0;
+        /** Marketsupply in kilowatthours (kWh) */
+        let marketSupply = 0;
+
         this.households.forEach(household => {
             const productionNow = household.GetCurrentElectricityProduction(windNow);
-            const consumptionNow = household.GetCurrentElectricityConsumption(timeNow);
+            const consumptionNow = household.blackout
+                ? 0
+                : household.GetCurrentElectricityConsumption(timeNow);
             const productionOverflow = productionNow - consumptionNow;
             let energyMarketTransmission = 0;
             let blackout = false;
@@ -137,13 +142,19 @@ export class Simulator {
         });
 
         if (market.price.validUntil <= timeNow) {
+            market.price.updatedAt = timeNow;
             market.price.validUntil = new Date(timeNow.getTime() + 1000);
             market.price.value = this.calculatePrice(market.basePrice, marketSupply, marketDemand);
         }
         market.demand = marketDemand;
         market.supply = marketSupply;
 
-        this.saveOuterSimulationCycleToDb(timeNow, windNow, market);
+        if (powerplant.active) {
+            powerplant.production.updatedAt = timeNow;
+            powerplant.production.value = marketDemand < marketSupply ? 0 : marketDemand - marketSupply;
+        }
+
+        this.saveOuterSimulationCycleToDb(timeNow, windNow, market, powerplant);
 
         console.log(`Simulation cycle ${timeNow.toISOString()} finished`);
         setTimeout(this.runNextSimCycle.bind(this), this.millisecondsToNextSecond());
@@ -234,8 +245,9 @@ export class Simulator {
         }
     }
 
-    private saveOuterSimulationCycleToDb(time: Date, windspeed: number, market: any): void {
+    private saveOuterSimulationCycleToDb(time: Date, windspeed: number, market: any, powerplant: any): void {
         market.save();
+        powerplant.save();
 
         new WindspeedDocument({
             timestamp: time,

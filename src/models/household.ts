@@ -2,7 +2,7 @@ import { Battery } from "./Battery";
 import { EffectSpike, EffectSpikeGenerator } from "./EffectSpike";
 import gaussian from "gaussian";
 import Location from "./location";
-import {type Household as HouseholdInterface } from "../db/models/household";
+import { type Household as HouseholdInterface } from "../db/models/household";
 
 export default class Household {
     public readonly id: string;
@@ -17,6 +17,7 @@ export default class Household {
     /** Consumption during low peak hours  */
     public baseConsumption: number;
     public heatingEfficiency: number;
+    public blackout: boolean;
 
     // Battery
     public battery: Battery;
@@ -51,6 +52,7 @@ export default class Household {
         this.location.longitude = data.location.longitude;
         this.baseConsumption = data.baseConsumption;
         this.heatingEfficiency = data.heatingEfficiency;
+        this.blackout = data.blackout;
         this.battery.maxEnergy = data.battery.maxCapacity;
         this.numberOfActiveWindturbines = data.windTurbines.active;
         this.maximumWindturbineProduction = data.windTurbines.maximumProduction;

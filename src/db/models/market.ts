@@ -4,7 +4,7 @@ export interface Market {
     name: string;
     demand: number;
     supply: number;
-    bastPrice: number;
+    basePrice: number;
     price: {
         validUntil: Date;
         updatedAt: Date;

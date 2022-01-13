@@ -77,7 +77,6 @@ export class Simulator {
     }
 
     private async runNextSimCycle(): Promise<void> {
-        console.log("Simulation cycle");
         const timeNow = new Date(new Date().setMilliseconds(0));
         const windNow = this.windmodel.getWindSpeedAtHeight(15);
         const [market, powerplant] = await Promise.all([
@@ -108,11 +107,17 @@ export class Simulator {
 
             if (productionOverflow > 0) {
                 // Sell to market
-                energyMarketTransmission = productionOverflow * household.sellRatioOverProduction;
+                let energyToAddToBattery: number;
 
-                marketSupply += energyMarketTransmission * 1e-3;
+                if (household.sellLimit?.start <= timeNow && timeNow <= household.sellLimit?.end) {
+                    energyToAddToBattery = productionOverflow;
+                    energyMarketTransmission = 0;
+                } else {
+                    energyToAddToBattery = productionOverflow * (1 - household.sellRatioOverProduction);
+                    energyMarketTransmission = productionOverflow * household.sellRatioOverProduction;
+                    marketSupply += energyMarketTransmission * 1e-3;
+                }
 
-                const energyToAddToBattery = productionOverflow * (1 - household.sellRatioOverProduction);
                 household.battery.charge(energyToAddToBattery, 1);
             } else if (productionOverflow < 0) {
                 // Buy from market
@@ -259,6 +264,7 @@ export class Simulator {
 function ConstructHouseholdInterface(object: any): HouseholdInterface {
     return {
         owner: object.owner,
+        name: object.name,
         area: object.area,
         location: {
             latitude: object.location.latitude,
@@ -272,6 +278,10 @@ function ConstructHouseholdInterface(object: any): HouseholdInterface {
         },
         sellRatioOverProduction: object.sellRatioOverProduction,
         buyRatioUnderProduction: object.buyRatioUnderProduction,
+        sellLimit: {
+            start: object.sellLimit?.start,
+            end: object.sellLimit?.end
+        },
         windTurbines: {
             active: object.windTurbines.active,
             maximumProduction: object.windTurbines.maximumProduction,

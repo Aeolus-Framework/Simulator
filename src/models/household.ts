@@ -27,6 +27,7 @@ export default class Household {
     // Production properties
     /** Number of active windturbines */
     public numberOfActiveWindturbines: number;
+    public sellLimit: { start?: Date; end?: Date };
 
     /** Maximum production of a windturbine. Unit Watt [W] */
     public maximumWindturbineProduction: number;
@@ -75,6 +76,10 @@ export default class Household {
 
         this.sellRatioOverProduction = data.sellRatioOverProduction;
         this.buyRatioUnderProduction = data.buyRatioUnderProduction;
+        this.sellLimit = {
+            start: data.sellLimit?.start,
+            end: data.sellLimit?.end
+        };
     }
 
     public GetConsumptionNoise(): number {

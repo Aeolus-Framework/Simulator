@@ -2,6 +2,7 @@ var mongoose = require("mongoose");
 
 export interface Household {
     owner: string;
+    name: string;
     thumbnail?: string;
     area: number;
     location: {
@@ -16,6 +17,10 @@ export interface Household {
     };
     sellRatioOverProduction: number;
     buyRatioUnderProduction: number;
+    sellLimit: {
+        start: Date;
+        end: Date;
+    };
     windTurbines: {
         active: number;
         maximumProduction: number;
@@ -29,6 +34,14 @@ export interface Household {
         DurationVariance: number;
     };
 }
+
+var sellLimitSchema = new mongoose.Schema(
+    {
+        start: { type: Date, required: true },
+        end: { type: Date, required: true }
+    },
+    { _id: false }
+);
 
 var householdSchema = new mongoose.Schema(
     {
@@ -48,6 +61,11 @@ var householdSchema = new mongoose.Schema(
         },
         sellRatioOverProduction: { type: Number, required: true, min: 0, max: 1 },
         buyRatioUnderProduction: { type: Number, required: true, min: 0, max: 1 },
+        sellLimit: {
+            type: sellLimitSchema,
+            required: false,
+            validate: [validatorSellLimitDates, "Sell limit enddate cannot occur before startdate"]
+        },
         windTurbines: {
             active: { type: Number, required: true, min: 0 },
             maximumProduction: { type: Number, required: true, min: 0 },
@@ -82,6 +100,10 @@ function validatorCutinWindspeed(value: number): boolean {
 
 function validatorCutoutWindspeed(value: number): boolean {
     return this.windTurbines.cutinWindspeed < value;
+}
+
+function validatorSellLimitDates(obj: any): boolean {
+    return obj?.start <= obj?.end;
 }
 
 /**

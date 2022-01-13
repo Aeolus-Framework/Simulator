@@ -61,14 +61,11 @@ export class Simulator {
     }
 
     async start() {
-        const [households, initialWindspeed] = await Promise.all([
-            this.getHouseholdsInDB(),
-            getLatestWindspeed()
-        ]);
+        const households = await this.getHouseholdsInDB();
 
         this.households = households;
         this.windmodel = new WindspeedModel(
-            initialWindspeed || this.windmodelParameters.initialWindspeed,
+            this.windmodelParameters.initialWindspeed,
             this.windmodelParameters.maxwindspeedChange,
             this.windmodelParameters.hellmanExponent
         );

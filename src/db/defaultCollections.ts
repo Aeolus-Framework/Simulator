@@ -26,7 +26,11 @@ export async function generateDefaultCollections(): Promise<void> {
     if (!powerplantExist) {
         await new PowerplantCollection({
             name: POWERPLANT_DEFAULT_DB_NAME,
-            active: false
+            active: false,
+            production: {
+                updatedAt: new Date(),
+                value: 0
+            }
         }).save();
     }
 }

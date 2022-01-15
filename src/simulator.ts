@@ -151,9 +151,11 @@ export class Simulator {
         market.demand = marketDemand;
         market.supply = marketSupply;
 
+        powerplant.production.updatedAt = timeNow;
         if (powerplant.active) {
-            powerplant.production.updatedAt = timeNow;
             powerplant.production.value = marketDemand < marketSupply ? 0 : marketDemand - marketSupply;
+        } else {
+            powerplant.production.value = 0;
         }
 
         this.saveOuterSimulationCycleToDb(timeNow, windNow, market, powerplant);

@@ -181,7 +181,14 @@ export class Simulator {
         const currentHousehold = this.households.find(household => household.id === householdId);
         const householdFromDb = await HouseholdDocument.findOne({ _id: householdId });
 
-        if (householdFromDb === null) return;
+        if (householdFromDb === null) {
+            const indexOfHousehold = this.households.findIndex(h => h.id === householdId);
+            if (indexOfHousehold === -1) return;
+
+            this.households.splice(indexOfHousehold, 1);
+            console.log(`Household ${householdId} has been removed from the simulation`);
+            return;
+        }
 
         const householdData = ConstructHouseholdInterface(householdFromDb);
 

@@ -18,6 +18,9 @@ export async function generateDefaultCollections(): Promise<void> {
             supply: 0,
             basePrice: 0.7,
             price: {
+                validUntil: new Date(new Date().getTime() + 1e3),
+                updatedAt: new Date(),
+                value: 0,
                 currency: "sek"
             }
         }).save();

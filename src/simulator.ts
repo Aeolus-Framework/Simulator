@@ -208,7 +208,7 @@ export class Simulator {
      * @returns price per kilowatthour (kWh) in sek.
      */
     private calculatePrice(basePrice: number, supply: number, demand: number): number {
-        if (supply == 0) return 0;
+        if (supply == 0) return basePrice * 2 * this.marketDemandEffect;
 
         return basePrice * (demand / supply) * this.marketDemandEffect;
     }
